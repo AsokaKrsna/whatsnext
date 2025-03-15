@@ -1,6 +1,6 @@
 {
   "name": "whats-next",
-  "version": "2.0.1",
+  "version": "2.0.2",
   "description": "A always-on-top to-do list application with a bubble interface",
   "main": "main.js",
   "scripts": {

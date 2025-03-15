@@ -1099,6 +1099,49 @@
       transform: translateY(-1px);
       box-shadow: 0 2px 5px var(--shadow-color);
     }
+
+    .date-toggle {
+      display: inline-flex;
+      align-items: center;
+      margin-left: 10px;
+      cursor: pointer;
+      color: var(--primary-color);
+      font-size: 12px;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+    
+    .date-toggle:hover {
+      opacity: 1;
+    }
+    
+    .date-toggle .date-icon {
+      margin-right: 4px;
+    }
+    
+    .subtasks-toggle {
+      display: inline-flex;
+      align-items: center;
+      margin-left: 10px;
+      cursor: pointer;
+      color: var(--primary-color);
+      font-size: 12px;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+    
+    .subtasks-toggle:hover {
+      opacity: 1;
+    }
+    
+    .subtask-counter {
+      margin-left: 5px;
+      background-color: var(--subtask-counter-bg);
+      border-radius: 10px;
+      padding: 2px 6px;
+      font-size: 10px;
+      color: var(--subtask-counter-color);
+    }
   </style>
 </head>
 <body>
@@ -1373,7 +1416,11 @@
                     ${formatDate(task.dueDate)}
                     <span class="task-edit-button" title="Edit date & priority">✏️</span>
                   </div>
-                ` : ''}
+                ` : `
+                  <span class="date-toggle" title="Add date & priority">
+                    <i class="date-icon">📅</i> Add date
+                  </span>
+                `}
                 ${task.priority ? `
                   <div class="priority priority-${task.priority}">
                     ${task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
@@ -1518,6 +1565,7 @@
         const deleteBtn = taskItem.querySelector('.task-delete');
         const taskTitle = taskItem.querySelector('.task-title');
         const editDateBtn = taskItem.querySelector('.task-edit-button');
+        const dateToggle = taskItem.querySelector('.date-toggle');
         const datePicker = taskItem.querySelector('.date-picker');
         const dateInput = taskItem.querySelector('.date-input');
         const priorityInput = taskItem.querySelector('.priority-input');
@@ -1558,10 +1606,37 @@
           });
         }
         
-        // Toggle date picker
+        // Toggle date picker (from edit button)
         if (editDateBtn && datePicker) {
           editDateBtn.addEventListener('click', () => {
-            toggleDatePicker(datePicker, dateInput, tasks.find(t => t.id === taskId)?.dueDate);
+            // Get the current task
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+            
+            // Show date picker with current date or default
+            toggleDatePicker(datePicker, dateInput, task.dueDate);
+            
+            // Set priority if exists, default to medium
+            if (priorityInput) {
+              priorityInput.value = task.priority || 'medium';
+            }
+          });
+        }
+        
+        // Toggle date picker (from date toggle)
+        if (dateToggle && datePicker) {
+          dateToggle.addEventListener('click', () => {
+            // Get the current task
+            const task = tasks.find(t => t.id === taskId);
+            if (!task) return;
+            
+            // Show date picker with current date or default
+            toggleDatePicker(datePicker, dateInput, task.dueDate);
+            
+            // Set priority if exists, default to medium
+            if (priorityInput) {
+              priorityInput.value = task.priority || 'medium';
+            }
           });
         }
         
