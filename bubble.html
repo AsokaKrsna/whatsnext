@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>What's Next?</title>
+  <style>
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+      user-select: none;
+      background-color: transparent;
+      -webkit-app-region: drag;
+      /* Make the entire body a perfect circle */
+      border-radius: 50%;
+    }
+    
+    #bubble {
+      width: 40px;
+      height: 40px;
+      border-radius: 50%;
+      background: linear-gradient(135deg, #ff61d2, #fe9090);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      position: relative;
+      overflow: hidden;
+      /* Ensure no borders or shadows */
+      border: none;
+      will-change: transform;
+      transform: translate3d(0, 0, 0);
+      backface-visibility: hidden;
+    }
+    
+    #bubble:hover {
+      transform: scale(0.95);
+    }
+    
+    #bubble:active {
+      transform: scale(0.9);
+    }
+    
+    #bubble-content {
+      font-family: 'Arial', sans-serif;
+      font-weight: bold;
+      font-size: 18px;
+      color: white;
+      -webkit-app-region: no-drag;
+      transform: translate3d(0, 0, 0);
+    }
+    
+    .pulse {
+      animation: pulse 1.5s infinite;
+    }
+    
+    @keyframes pulse {
+      0% {
+        transform: scale(1) translate3d(0, 0, 0);
+      }
+      50% {
+        transform: scale(1.05) translate3d(0, 0, 0);
+      }
+      100% {
+        transform: scale(1) translate3d(0, 0, 0);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div id="bubble" class="bubble">
+    <div id="bubble-content">✓</div>
+  </div>
+
+  <script>
+    try {
+      // Remove remote module reference which is deprecated
+      const { ipcRenderer } = require('electron');
+      
+      // Apply bubble customizations from settings
+      function applyBubbleCustomizations() {
+        try {
+          console.log('Applying bubble customizations');
+          const settings = ipcRenderer.sendSync('get-settings') || {};
+          console.log('Received settings:', JSON.stringify(settings, null, 2));
+          const bubbleSettings = settings.bubble || {};
+          const bubble = document.getElementById('bubble');
+          
+          // Apply size (default to 40px)
+          const size = bubbleSettings.size || 40;
+          console.log('Setting bubble size to:', size);
+          
+          // Apply size consistently
+          bubble.style.width = `${size}px`;
+          bubble.style.height = `${size}px`;
+          document.body.style.width = `${size}px`;
+          document.body.style.height = `${size}px`;
+          
+          // Remove any transforms that might affect size
+          bubble.style.transform = 'translate3d(0, 0, 0)';
+          
+          // Apply font size (scale based on bubble size)
+          const contentEl = document.getElementById('bubble-content');
+          const fontSize = Math.round(size * 0.45);
+          console.log('Setting font size to:', fontSize);
+          contentEl.style.fontSize = `${fontSize}px`;
+          
+          // Apply color scheme (default to pink gradient)
+          if (bubbleSettings.colorScheme) {
+            // Predefined color schemes
+            const schemes = {
+              pink: 'linear-gradient(135deg, #ff61d2, #fe9090)',
+              blue: 'linear-gradient(135deg, #61a8ff, #90c8fe)',
+              green: 'linear-gradient(135deg, #61ffaa, #90fed2)',
+              purple: 'linear-gradient(135deg, #9061ff, #b190fe)',
+              orange: 'linear-gradient(135deg, #ff9f61, #feb890)',
+              solid: bubbleSettings.customColor || '#ff61d2'
+            };
+            
+            const scheme = bubbleSettings.colorScheme;
+            console.log('Applying color scheme:', scheme);
+            
+            if (scheme === 'solid') {
+              const solidColor = bubbleSettings.customColor || '#ff61d2';
+              console.log('Using solid color:', solidColor);
+              bubble.style.background = solidColor;
+            } else {
+              console.log('Using gradient scheme:', schemes[scheme]);
+              bubble.style.background = schemes[scheme] || schemes.pink;
+            }
+          }
+          
+          // Apply dark mode if needed
+          if (settings.darkMode) {
+            // Already handled by color schemes, but we could adjust text color if needed
+            document.getElementById('bubble-content').style.color = 'white';
+          }
+          
+          // Force the renderer to respect the actual pixel size
+          setTimeout(() => {
+            try {
+              // Request size and position from Electron API
+              ipcRenderer.send('check-edge-snap');
+            } catch (error) {
+              console.error('Error during size confirmation:', error);
+            }
+          }, 100);
+          
+          console.log('Bubble customizations applied successfully:', bubbleSettings);
+        } catch (error) {
+          console.error('Error applying bubble customizations:', error);
+          ipcRenderer.send('renderer-error', 'Error applying bubble customizations: ' + error.message);
+        }
+      }
+      
+      // Update task count in bubble
+      function updateTaskCount() {
+        try {
+          let tasks = [];
+          try {
+            tasks = ipcRenderer.sendSync('get-tasks') || [];
+          } catch (error) {
+            console.error('Error getting tasks:', error);
+            // Send error to main process for logging
+            ipcRenderer.send('renderer-error', 'Error getting tasks: ' + error.message);
+          }
+          
+          const incompleteTasks = Array.isArray(tasks) ? tasks.filter(task => !task.completed).length : 0;
+          const bubbleContent = document.getElementById('bubble-content');
+          
+          console.log('Updating bubble content with incomplete tasks:', incompleteTasks);
+          
+          if (incompleteTasks > 0) {
+            bubbleContent.textContent = incompleteTasks;
+            document.getElementById('bubble').classList.add('pulse');
+          } else {
+            bubbleContent.textContent = '✓';
+            document.getElementById('bubble').classList.remove('pulse');
+          }
+        } catch (error) {
+          console.error('Error updating task count:', error);
+          // Send error to main process for logging
+          ipcRenderer.send('renderer-error', 'Error updating task count: ' + error.message);
+        }
+      }
+      
+      // Force refresh settings from store
+      function forceRefreshSettings() {
+        try {
+          console.log('Forcing refresh of bubble settings');
+          // Clear any cached settings
+          ipcRenderer.sendSync('refresh-settings');
+          
+          // Apply latest settings
+          applyBubbleCustomizations();
+          updateTaskCount();
+        } catch (error) {
+          console.error('Error forcing settings refresh:', error);
+        }
+      }
+      
+      // Make both the bubble div and the bubble content clickable 
+      const bubbleElement = document.getElementById('bubble');
+      const bubbleContent = document.getElementById('bubble-content');
+      
+      function handleBubbleClick(e) {
+        console.log('Bubble clicked in renderer!');
+        try {
+          // Prevent any default behavior
+          e.preventDefault();
+          e.stopPropagation();
+          
+          // Send the click event to main process
+          ipcRenderer.send('bubble-clicked');
+          
+          // Provide visual feedback
+          bubbleElement.style.transform = 'scale(0.95)';
+          setTimeout(() => {
+            bubbleElement.style.transform = 'scale(1)';
+          }, 150);
+        } catch (error) {
+          console.error('Error on bubble click:', error);
+          // Send error to main process for logging
+          ipcRenderer.send('renderer-error', 'Error on bubble click: ' + error.message);
+        }
+      }
+      
+      // Implement edge snapping through IPC rather than remote
+      let dragCounter = 0;
+      let isDragging = false;
+      let dragTimer = null;
+      
+      // When drag starts, initialize counter and set dragging state
+      document.addEventListener('mousedown', (e) => {
+        console.log('Mouse down on bubble');
+        dragCounter = 0;
+        isDragging = true;
+        
+        // Clear any existing timers
+        if (dragTimer) {
+          clearTimeout(dragTimer);
+        }
+      });
+      
+      // During drag, increment counter
+      document.addEventListener('mousemove', (e) => {
+        if (isDragging) {
+          dragCounter++;
+          
+          // Clear any existing timers and create a new one
+          if (dragTimer) {
+            clearTimeout(dragTimer);
+          }
+          
+          // Set a timer to detect when dragging stops (user stops moving mouse)
+          dragTimer = setTimeout(() => {
+            if (dragCounter > 5) { // We've moved enough to consider it a drag
+              console.log('Drag detected, sending check-edge-snap, drag count:', dragCounter);
+              // Tell main process to check for edge snapping
+              ipcRenderer.send('check-edge-snap');
+              
+              // Also refresh settings to ensure proper size after drag
+              if (dragCounter > 20) { // If it's a significant drag, possibly across displays
+                forceRefreshSettings();
+              }
+            }
+          }, 100);
+        }
+      });
+      
+      // When drag ends, check if we've actually moved
+      document.addEventListener('mouseup', () => {
+        console.log('Mouse up, drag count:', dragCounter);
+        if (isDragging && dragCounter > 5) {
+          console.log('Sending check-edge-snap after mouseup');
+          
+          // Tell main process to check for edge snapping
+          ipcRenderer.send('check-edge-snap');
+          
+          // For significant drags, also force a refresh of the bubble appearance
+          if (dragCounter > 20) {
+            console.log('Significant drag detected, forcing refresh...');
+            
+            // Add a small delay to ensure the window has settled
+            setTimeout(() => {
+              forceRefreshSettings();
+              
+              // Add a second check after a small delay to ensure it's processed
+              setTimeout(() => {
+                console.log('Sending delayed check-edge-snap');
+                ipcRenderer.send('check-edge-snap');
+              }, 300);
+            }, 100);
+          } else {
+            // Add a second check after a small delay to ensure it's processed
+            setTimeout(() => {
+              console.log('Sending delayed check-edge-snap');
+              ipcRenderer.send('check-edge-snap');
+            }, 300);
+          }
+        }
+        
+        isDragging = false;
+        dragCounter = 0;
+      });
+      
+      // Also listen for window move events from the main process
+      ipcRenderer.on('window-moved', () => {
+        console.log('Window moved event received, sending check-edge-snap');
+        ipcRenderer.send('check-edge-snap');
+      });
+      
+      // Add click events with direct event handling
+      bubbleElement.addEventListener('click', handleBubbleClick);
+      bubbleContent.addEventListener('click', handleBubbleClick);
+      
+      // Listen for task updates
+      ipcRenderer.on('tasks-updated', () => {
+        console.log('Tasks updated, updating bubble content');
+        updateTaskCount();
+      });
+      
+      // Listen for settings updates
+      ipcRenderer.on('settings-updated', () => {
+        console.log('Settings updated, applying bubble customizations');
+        applyBubbleCustomizations();
+      });
+      
+      // Listen for refresh command
+      ipcRenderer.on('refresh-bubble', () => {
+        console.log('Received refresh command for bubble');
+        forceRefreshSettings();
+      });
+      
+      // Listen for force size refresh from main process (for multi-monitor support)
+      ipcRenderer.on('force-refresh-size', (event, size) => {
+        console.log('Received force size refresh command with size:', size);
+        try {
+          // Update DOM element size
+          const bubble = document.getElementById('bubble');
+          bubble.style.width = `${size}px`;
+          bubble.style.height = `${size}px`;
+          document.body.style.width = `${size}px`;
+          document.body.style.height = `${size}px`;
+          
+          // Update font size to match
+          const contentEl = document.getElementById('bubble-content');
+          const fontSize = Math.round(size * 0.45);
+          contentEl.style.fontSize = `${fontSize}px`;
+          
+          console.log('Forced size refresh applied successfully');
+        } catch (error) {
+          console.error('Error applying forced size refresh:', error);
+          ipcRenderer.send('renderer-error', 'Error applying forced size refresh: ' + error.message);
+        }
+      });
+      
+      // Add additional checks for screen changes
+      window.addEventListener('resize', () => {
+        console.log('Window resize detected, refreshing bubble size');
+        forceRefreshSettings();
+      });
+      
+      // Apply customizations on startup
+      setTimeout(() => {
+        console.log('Initial application of bubble customizations');
+        applyBubbleCustomizations();
+        
+        // Initial update of task count
+        updateTaskCount();
+        
+        // Wait 1 second and reapply to ensure settings take effect
+        setTimeout(forceRefreshSettings, 1000);
+        
+        // Perform initial edge check
+        setTimeout(() => {
+          ipcRenderer.send('check-edge-snap');
+        }, 500);
+      }, 0);
+      
+      // Keep a reference to the interval ID for cleanup
+      let taskUpdateInterval;
+      
+      // Check for updates periodically (increase from 5s to 10s to reduce overhead)
+      taskUpdateInterval = setInterval(updateTaskCount, 10000);
+      
+      // Clean up interval when window is closing to prevent memory leaks
+      window.addEventListener('beforeunload', () => {
+        if (taskUpdateInterval) {
+          clearInterval(taskUpdateInterval);
+        }
+        // Clear any other timers
+        if (dragTimer) {
+          clearTimeout(dragTimer);
+        }
+      });
+      
+      console.log('Bubble renderer initialized successfully');
+    } catch (error) {
+      console.error('Fatal error in bubble.html:', error);
+      document.getElementById('bubble-content').textContent = '!';
+    }
+  </script>
+</body>
+</html>

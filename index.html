@@ -1,0 +1,2325 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>What's Next</title>
+  <style>
+    :root {
+      --primary-color: #ff61d2;
+      --secondary-color: #fe9090;
+      --background-color: #fff8fa;
+      --text-color: #333333;
+      --complete-color: #64c9b0;
+      --shadow-color: rgba(255, 97, 210, 0.3);
+      --card-background: white;
+      --input-background: white;
+      --border-color: #f0f0f0;
+      --date-picker-bg: #f9f4f8;
+      --notes-bg: #f9f9fb;
+      --subtask-bg: rgba(255, 255, 255, 0.7);
+      --settings-bg: white;
+      --cancel-btn-bg: #f5f5f5;
+      --cancel-btn-color: #666;
+      --subtask-counter-bg: #f0f0f0;
+      --subtask-counter-color: #666;
+      --task-border-left: 2px solid #f0f0f0;
+    }
+    
+    /* Dark theme variables */
+    [data-theme="dark"] {
+      --primary-color: #ff61d2;
+      --secondary-color: #fe9090;
+      --background-color: #1e1e2e;
+      --text-color: #e0e0e0;
+      --complete-color: #50b898;
+      --shadow-color: rgba(255, 97, 210, 0.2);
+      --card-background: #2d2d3f;
+      --input-background: #252536;
+      --border-color: #3f3f5a;
+      --date-picker-bg: #252536;
+      --notes-bg: #252536;
+      --subtask-bg: rgba(45, 45, 63, 0.7);
+      --settings-bg: #2d2d3f;
+      --cancel-btn-bg: #3f3f5a;
+      --cancel-btn-color: #c0c0c0;
+      --subtask-counter-bg: #3f3f5a;
+      --subtask-counter-color: #c0c0c0;
+      --task-border-left: 2px solid #3f3f5a;
+    }
+    
+    /* Transition for smooth theme switching */
+    body, button, input, textarea, select, .task-item, .date-picker, .task-notes, .subtasks, .settings-panel, .priority, .subtask-item {
+      transition: background-color 0.3s ease, color 0.3s ease, border-color 0.3s ease, box-shadow 0.3s ease;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    /* Custom title bar for frameless window */
+    .title-bar {
+      -webkit-app-region: drag; /* Make the title bar draggable */
+      height: 0; /* Hide but still allow dragging from top area */
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      z-index: 1000;
+    }
+    
+    /* Window control buttons */
+    .window-controls {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      display: flex;
+      gap: 8px;
+      z-index: 1001;
+      -webkit-app-region: no-drag; /* Make buttons clickable */
+    }
+    
+    .window-control-button {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: none;
+      cursor: pointer;
+      opacity: 0.7;
+      transition: opacity 0.2s ease;
+    }
+    
+    .window-control-button:hover {
+      opacity: 1;
+    }
+    
+    .minimize-button {
+      background-color: #FFBD44;
+    }
+    
+    .close-button {
+      background-color: #FF605C;
+    }
+    
+    body {
+      font-family: 'Segoe UI', 'Arial', sans-serif;
+      background: var(--background-color);
+      color: var(--text-color);
+      margin: 0;
+      padding: 20px;
+      height: 100vh;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border-radius: 10px; /* Rounded corners for the window */
+    }
+    
+    header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+      padding-top: 10px; /* Add padding to avoid content being under the drag area */
+    }
+    
+    h1 {
+      font-size: 24px;
+      background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      text-align: center;
+      margin: 0;
+    }
+    
+    .settings-icon {
+      cursor: pointer;
+      color: var(--secondary-color);
+      font-size: 20px;
+      transition: transform 0.3s ease;
+    }
+    
+    .settings-icon:hover {
+      transform: rotate(30deg);
+    }
+
+    .add-task {
+      display: flex;
+      margin-bottom: 20px;
+    }
+    
+    .add-task input {
+      flex: 1;
+      padding: 12px 15px;
+      border: 2px solid var(--border-color);
+      border-radius: 30px 0 0 30px;
+      font-size: 14px;
+      outline: none;
+      transition: border-color 0.3s;
+      background-color: var(--input-background);
+      color: var(--text-color);
+    }
+    
+    .add-task input:focus {
+      border-color: var(--primary-color);
+    }
+    
+    .add-task button {
+      padding: 12px 20px;
+      background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+      color: white;
+      border: none;
+      border-radius: 0 30px 30px 0;
+      cursor: pointer;
+      font-weight: bold;
+      transition: all 0.3s;
+    }
+    
+    .add-task button:hover {
+      opacity: 0.9;
+    }
+    
+    .task-list {
+      overflow-y: auto;
+      flex: 1;
+      padding: 10px 0;
+    }
+    
+    .task-item {
+      background: var(--card-background);
+      border-radius: 15px;
+      padding: 15px;
+      margin-bottom: 15px;
+      box-shadow: 0 3px 10px var(--shadow-color);
+      display: flex;
+      flex-direction: column;
+      transition: transform 0.2s, box-shadow 0.2s, background-color 0.3s;
+      border-left: 4px solid transparent;
+    }
+    
+    .task-item:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 5px 15px var(--shadow-color);
+    }
+    
+    .task-header {
+      display: flex;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    
+    .task-checkbox {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 22px;
+      height: 22px;
+      border: 2px solid var(--primary-color);
+      border-radius: 6px;
+      margin-right: 15px;
+      position: relative;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .task-checkbox:checked {
+      background-color: var(--complete-color);
+      border-color: var(--complete-color);
+    }
+    
+    .task-checkbox:checked:after {
+      content: '✓';
+      position: absolute;
+      color: white;
+      font-size: 14px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    
+    .task-title {
+      flex: 1;
+      font-size: 16px;
+      font-weight: 500;
+      word-break: break-word;
+    }
+    
+    .completed .task-title {
+      text-decoration: line-through;
+      color: #888;
+    }
+    
+    .task-delete {
+      background: none;
+      border: none;
+      color: #ff6b6b;
+      cursor: pointer;
+      font-size: 18px;
+      opacity: 0.6;
+      transition: opacity 0.3s;
+    }
+    
+    .task-delete:hover {
+      opacity: 1;
+    }
+    
+    .task-details {
+      display: flex;
+      align-items: center;
+      margin-left: 37px;
+      font-size: 12px;
+      color: #888;
+    }
+    
+    .date-time {
+      display: flex;
+      align-items: center;
+      margin-right: 15px;
+    }
+    
+    .date-time i {
+      margin-right: 5px;
+    }
+    
+    .priority {
+      padding: 2px 8px;
+      border-radius: 10px;
+      font-size: 10px;
+      font-weight: bold;
+      color: white;
+    }
+    
+    .priority-low {
+      background-color: #64c9b0;
+    }
+    
+    .priority-medium {
+      background-color: #f9b93f;
+    }
+    
+    .priority-high {
+      background-color: #ff6b6b;
+    }
+    
+    /* Updated styles for the date picker */
+    .date-picker {
+      margin-top: 10px;
+      margin-left: 37px;
+      display: flex;
+      align-items: stretch;
+      flex-wrap: wrap;
+      gap: 8px;
+      background-color: var(--date-picker-bg);
+      padding: 12px;
+      border-radius: 12px;
+      box-shadow: 0 2px 5px var(--shadow-color);
+      transition: all 0.3s ease;
+      position: relative;
+    }
+    
+    .date-picker::before {
+      content: "📅 Set deadline & priority";
+      display: block;
+      width: 100%;
+      margin-bottom: 8px;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--primary-color);
+    }
+    
+    .date-picker input {
+      flex: 1;
+      min-width: 200px;
+      padding: 10px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 13px;
+      outline: none;
+      transition: all 0.3s;
+      background-color: var(--input-background);
+      color: var(--text-color);
+    }
+    
+    .date-picker input:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 2px rgba(255, 97, 210, 0.2);
+    }
+    
+    .priority-selector {
+      flex: 1;
+      min-width: 100px;
+    }
+    
+    .priority-selector select {
+      width: 100%;
+      padding: 10px 12px;
+      border: 1px solid var(--border-color);
+      border-radius: 8px;
+      font-size: 13px;
+      background-color: var(--input-background);
+      color: var(--text-color);
+      cursor: pointer;
+      outline: none;
+      transition: all 0.3s;
+      appearance: none;
+      background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23ff61d2' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6 9 12 15 18 9'%3e%3c/polyline%3e%3c/svg%3e");
+      background-repeat: no-repeat;
+      background-position: right 10px center;
+      background-size: 12px;
+      padding-right: 30px;
+    }
+    
+    .priority-selector select:focus {
+      border-color: var(--primary-color);
+      box-shadow: 0 0 0 2px rgba(255, 97, 210, 0.2);
+    }
+    
+    /* Buttons to make actions more visible */
+    .date-picker-actions {
+      display: flex;
+      width: 100%;
+      justify-content: flex-end;
+      margin-top: 8px;
+    }
+    
+    .date-picker-button {
+      padding: 6px 12px;
+      border: none;
+      border-radius: 6px;
+      font-size: 12px;
+      font-weight: 500;
+      cursor: pointer;
+      transition: all 0.2s;
+    }
+    
+    .save-date {
+      background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+      color: white;
+      margin-left: 8px;
+    }
+    
+    .cancel-date {
+      background-color: var(--cancel-btn-bg);
+      color: var(--cancel-btn-color);
+    }
+    
+    .date-picker-button:hover {
+      transform: translateY(-1px);
+      box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+    }
+    
+    /* Show an edit button for date/priority */
+    .task-edit-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      margin-left: 5px;
+      padding: 3px;
+      border-radius: 50%;
+      background-color: #f0f0f0;
+      color: #666;
+      font-size: 10px;
+      cursor: pointer;
+      opacity: 0;
+      transition: all 0.2s;
+    }
+    
+    .task-item:hover .task-edit-button {
+      opacity: 1;
+    }
+    
+    .task-edit-button:hover {
+      background-color: var(--primary-color);
+      color: white;
+    }
+    
+    /* Settings Panel */
+    .settings-panel {
+      position: absolute;
+      right: 0;
+      top: 0;
+      height: 100%;
+      width: 0;
+      background: var(--settings-bg);
+      overflow-y: auto;
+      overflow-x: hidden;
+      box-shadow: -5px 0 15px rgba(0, 0, 0, 0.1);
+      transition: width 0.3s ease, background-color 0.3s ease;
+      z-index: 10;
+      display: flex;
+      flex-direction: column;
+    }
+    
+    .settings-panel.active {
+      width: 300px;
+      padding: 20px;
+      padding-bottom: 20px;
+    }
+    
+    .settings-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 30px;
+    }
+    
+    .settings-header h2 {
+      font-size: 20px;
+      color: var(--primary-color);
+    }
+    
+    .close-settings {
+      background: none;
+      border: none;
+      font-size: 24px;
+      cursor: pointer;
+      color: #888;
+    }
+    
+    .settings-content {
+      flex: 1; 
+      overflow-y: auto;
+      margin-bottom: 15px;
+    }
+    
+    .settings-footer {
+      margin-top: 15px;
+    }
+    
+    .save-settings {
+      /* Remove sticky positioning */
+      position: relative;
+      padding: 10px 20px;
+      background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      width: 100%;
+      font-weight: bold;
+      margin-top: 15px;
+    }
+    
+    .setting-section {
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    /* Remove the last border bottom for the last setting section */
+    .setting-section:last-of-type {
+      border-bottom: none;
+      margin-bottom: 5px;
+    }
+    
+    .setting-item {
+      margin-bottom: 20px;
+    }
+    
+    .setting-item label {
+      display: block;
+      margin-bottom: 8px;
+      font-weight: 500;
+    }
+    
+    .setting-item input[type="checkbox"] {
+      margin-right: 10px;
+    }
+    
+    .setting-item input[type="number"] {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid var(--border-color);
+      border-radius: 5px;
+      background-color: var(--input-background);
+      color: var(--text-color);
+    }
+    
+    .overlay {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: rgba(0, 0, 0, 0.3);
+      visibility: hidden;
+      opacity: 0;
+      transition: opacity 0.3s, visibility 0.3s;
+      z-index: 5;
+    }
+    
+    .overlay.active {
+      visibility: visible;
+      opacity: 1;
+    }
+    
+    /* Cute notification banner */
+    .notification-banner {
+      position: fixed;
+      top: -70px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+      color: white;
+      padding: 15px 25px;
+      border-radius: 0 0 10px 10px;
+      box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+      transition: top 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+      z-index: 1000;
+      text-align: center;
+      font-weight: bold;
+    }
+    
+    .notification-banner.show {
+      top: 0;
+    }
+    
+    /* Animations */
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    
+    .task-item {
+      animation: fadeIn 0.3s ease-out;
+    }
+    
+    /* Priority border colors - for task items only */
+    .task-item.task-priority-high {
+      border-left-color: #ff6b6b;
+    }
+    
+    .task-item.task-priority-medium {
+      border-left-color: #f9b93f;
+    }
+    
+    .task-item.task-priority-low {
+      border-left-color: #64c9b0;
+    }
+    
+    /* Urgency indicators */
+    .task-item.urgent:not(.task-priority-low):not(.task-priority-medium):not(.task-priority-high) {
+      background: linear-gradient(to right, #fff8f8, white);
+    }
+    
+    .task-item.very-urgent:not(.task-priority-low):not(.task-priority-medium):not(.task-priority-high) {
+      background: linear-gradient(to right, #ffefef, white);
+      animation: pulse-urgent 2s infinite;
+    }
+    
+    @keyframes pulse-urgent {
+      0% {
+        box-shadow: 0 3px 10px rgba(255, 107, 107, 0.3);
+      }
+      50% {
+        box-shadow: 0 3px 15px rgba(255, 107, 107, 0.5);
+      }
+      100% {
+        box-shadow: 0 3px 10px rgba(255, 107, 107, 0.3);
+      }
+    }
+    
+    /* Make deadline text color reflect urgency */
+    .date-time.urgent {
+      color: #ff6b6b;
+      font-weight: 500;
+    }
+    
+    .date-time.urgent i {
+      animation: blink 1.5s infinite;
+    }
+    
+    @keyframes blink {
+      0% { opacity: 1; }
+      50% { opacity: 0.5; }
+      100% { opacity: 1; }
+    }
+
+    /* Tab styling */
+    .tabs {
+      display: flex;
+      margin-bottom: 15px;
+      border-bottom: 1px solid #f0f0f0;
+    }
+
+    .tab-btn {
+      padding: 10px 20px;
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      font-size: 14px;
+      font-weight: 500;
+      color: #888;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+
+    .tab-btn.active {
+      color: var(--primary-color);
+      border-bottom-color: var(--primary-color);
+    }
+
+    .tab-content {
+      display: none;
+      flex: 1;
+      overflow: hidden;
+      flex-direction: column;
+    }
+
+    .tab-content.active {
+      display: flex;
+    }
+
+    /* Recurring task styles */
+    .task-item.recurring {
+      background: var(--card-background);
+      border-left: var(--task-border-left);
+    }
+
+    [data-theme="dark"] .task-item.recurring {
+      background: var(--card-background);
+    }
+
+    .task-recurring-label {
+      display: flex;
+      align-items: center;
+      margin-left: 5px;
+      font-size: 10px;
+      padding: 2px 6px;
+      border-radius: 10px;
+      background-color: var(--date-picker-bg);
+      color: var(--primary-color);
+    }
+    
+    .task-recurring-label i, 
+    .recurring-icon {
+      margin-right: 3px;
+      font-size: 10px;
+    }
+
+    /* Task notes styling */
+    .task-notes {
+      margin-top: 10px;
+      margin-left: 37px;
+      background-color: var(--notes-bg);
+      padding: 10px;
+      border-radius: 8px;
+      font-size: 13px;
+      display: none;
+    }
+    
+    .task-notes-content {
+      margin-bottom: 8px;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    
+    .task-notes-edit {
+      width: 100%;
+      min-height: 80px;
+      padding: 8px;
+      border: 1px solid #e0e0e0;
+      border-radius: 6px;
+      font-family: inherit;
+      font-size: 13px;
+      resize: vertical;
+    }
+    
+    .task-notes-actions {
+      display: flex;
+      justify-content: flex-end;
+      margin-top: 8px;
+    }
+    
+    .task-notes-button {
+      padding: 5px 10px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      margin-left: 5px;
+    }
+    
+    .task-notes-button {
+      padding: 5px 10px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 12px;
+      margin-left: 5px;
+    }
+    
+    .save-notes {
+      background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+      color: white;
+    }
+    
+    .cancel-notes {
+      background-color: #f0f0f0;
+      color: #666;
+    }
+    
+    .task-toggle-notes {
+      margin-left: 10px;
+      cursor: pointer;
+      color: var(--primary-color);
+      font-size: 12px;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+    
+    .task-toggle-notes:hover {
+      opacity: 1;
+    }
+    
+    /* Note indicator for tasks with notes */
+    .note-indicator {
+      font-size: 12px;
+      margin-left: 8px;
+      opacity: 0.8;
+      color: var(--primary-color);
+    }
+
+    /* Subtasks styling */
+    .subtasks {
+      margin-top: 5px;
+      margin-left: 37px;
+      border-left: var(--task-border-left);
+      padding-left: 10px;
+    }
+    
+    .subtask-item {
+      display: flex;
+      align-items: center;
+      margin-bottom: 8px;
+      animation: fadeIn 0.3s ease-out;
+      padding: 6px 8px;
+      border-radius: 6px;
+      background-color: var(--subtask-bg);
+    }
+    
+    .subtask-checkbox {
+      -webkit-appearance: none;
+      appearance: none;
+      width: 18px;
+      height: 18px;
+      border: 2px solid var(--primary-color);
+      border-radius: 4px;
+      margin-right: 10px;
+      position: relative;
+      cursor: pointer;
+      transition: all 0.3s;
+    }
+    
+    .subtask-checkbox:checked {
+      background-color: var(--complete-color);
+      border-color: var(--complete-color);
+    }
+    
+    .subtask-checkbox:checked:after {
+      content: '✓';
+      position: absolute;
+      color: white;
+      font-size: 12px;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+    }
+    
+    .subtask-title {
+      flex: 1;
+      font-size: 14px;
+    }
+    
+    .subtask-delete {
+      background: none;
+      border: none;
+      color: #ff6b6b;
+      cursor: pointer;
+      font-size: 14px;
+      opacity: 0.5;
+      transition: opacity 0.3s;
+    }
+    
+    .subtask-delete:hover {
+      opacity: 1;
+    }
+    
+    .add-subtask {
+      display: flex;
+      margin-top: 8px;
+      margin-bottom: 8px;
+    }
+    
+    .add-subtask input {
+      flex: 1;
+      padding: 8px 10px;
+      border: 1px solid var(--border-color);
+      border-radius: 20px 0 0 20px;
+      font-size: 13px;
+      outline: none;
+      background-color: var(--input-background);
+      color: var(--text-color);
+    }
+    
+    .add-subtask button {
+      padding: 8px 12px;
+      background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+      color: white;
+      border: none;
+      border-radius: 0 20px 20px 0;
+      cursor: pointer;
+      font-size: 13px;
+    }
+    
+    .subtask-completed .subtask-title {
+      text-decoration: line-through;
+      color: #888;
+    }
+    
+    .subtasks-toggle {
+      display: inline-flex;
+      align-items: center;
+      margin-left: 10px;
+      cursor: pointer;
+      color: var(--primary-color);
+      font-size: 12px;
+      opacity: 0.7;
+      transition: opacity 0.2s;
+    }
+    
+    .subtasks-toggle:hover {
+      opacity: 1;
+    }
+    
+    .subtask-counter {
+      margin-left: 5px;
+      background-color: var(--subtask-counter-bg);
+      border-radius: 10px;
+      padding: 2px 6px;
+      font-size: 10px;
+      color: var(--subtask-counter-color);
+    }
+
+    /* Bubble customization styles */
+    .bubble-size-slider {
+      width: 100%;
+      margin-top: 8px;
+    }
+    
+    .color-scheme-options {
+      display: flex;
+      flex-wrap: wrap;
+      margin-top: 10px;
+      gap: 8px;
+    }
+    
+    .color-option {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      cursor: pointer;
+      transition: transform 0.2s, box-shadow 0.2s;
+      position: relative;
+    }
+    
+    .color-option:hover {
+      transform: scale(1.1);
+    }
+    
+    .color-option.selected {
+      box-shadow: 0 0 0 2px white, 0 0 0 4px var(--primary-color);
+    }
+    
+    .color-option.pink {
+      background: linear-gradient(135deg, #ff61d2, #fe9090);
+    }
+    
+    .color-option.blue {
+      background: linear-gradient(135deg, #61a8ff, #90c8fe);
+    }
+    
+    .color-option.green {
+      background: linear-gradient(135deg, #61ffaa, #90fed2);
+    }
+    
+    .color-option.purple {
+      background: linear-gradient(135deg, #9061ff, #b190fe);
+    }
+    
+    .color-option.orange {
+      background: linear-gradient(135deg, #ff9f61, #feb890);
+    }
+    
+    .color-option.custom {
+      background: #f0f0f0;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 16px;
+    }
+    
+    .color-picker-container {
+      margin-top: 10px;
+      display: none;
+    }
+    
+    .color-picker-container.visible {
+      display: block;
+    }
+    
+    .color-picker {
+      width: 100%;
+      height: 30px;
+      padding: 0;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+    
+    .setting-section {
+      margin-bottom: 20px;
+      padding-bottom: 15px;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .setting-section-title {
+      font-size: 16px;
+      margin-bottom: 10px;
+      color: var(--primary-color);
+      font-weight: 500;
+    }
+
+    /* Toggle switch styling */
+    .toggle-switch {
+      position: relative;
+      display: inline-block;
+      width: 50px;
+      height: 24px;
+      margin-left: 10px;
+      vertical-align: middle;
+    }
+
+    .toggle-switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+
+    .toggle-slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .4s;
+      border-radius: 24px;
+    }
+
+    .toggle-slider:before {
+      position: absolute;
+      content: "";
+      height: 16px;
+      width: 16px;
+      left: 4px;
+      bottom: 4px;
+      background-color: white;
+      transition: .4s;
+      border-radius: 50%;
+    }
+
+    input:checked + .toggle-slider {
+      background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+    }
+
+    input:checked + .toggle-slider:before {
+      transform: translateX(26px);
+    }
+
+    .toggle-label {
+      display: flex;
+      align-items: center;
+      cursor: pointer;
+    }
+
+    .toggle-text {
+      margin-right: 8px;
+    }
+
+    /* Force refresh button */
+    .refresh-button {
+      position: fixed;
+      bottom: 20px;
+      right: 20px;
+      background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+      color: white;
+      border: none;
+      border-radius: 50%;
+      width: 40px;
+      height: 40px;
+      font-size: 16px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      cursor: pointer;
+      box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+      opacity: 0;
+      transform: scale(0);
+      transition: opacity 0.3s, transform 0.3s;
+      z-index: 999;
+    }
+    
+    .refresh-button.show {
+      opacity: 1;
+      transform: scale(1);
+    }
+    
+    .refresh-button:hover {
+      transform: scale(1.1) rotate(30deg);
+    }
+
+    /* Add styling for the apply bubble changes button */
+    .apply-bubble-changes {
+      padding: 8px 16px;
+      background: linear-gradient(to right, var(--primary-color), var(--secondary-color));
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin-top: 15px;
+      margin-bottom: 10px;
+      width: 100%;
+      font-weight: bold;
+      opacity: 0.9;
+    }
+
+    .apply-bubble-changes:hover {
+      opacity: 1;
+      transform: translateY(-1px);
+      box-shadow: 0 2px 5px var(--shadow-color);
+    }
+  </style>
+</head>
+<body>
+  <!-- Custom title bar for frameless window -->
+  <div class="title-bar"></div>
+  
+  <!-- Window control buttons -->
+  <div class="window-controls">
+    <button class="window-control-button minimize-button" id="minimize-btn" title="Minimize"></button>
+    <button class="window-control-button close-button" id="close-btn" title="Close"></button>
+  </div>
+  
+  <header>
+    <h1>What's Next?</h1>
+    <div class="settings-icon" id="settings-btn">⚙</div>
+  </header>
+
+  <div class="tabs">
+    <button class="tab-btn active" data-tab="regular">My Tasks</button>
+    <button class="tab-btn" data-tab="recurring">Daily Routines</button>
+  </div>
+
+  <div class="add-task">
+    <input type="text" id="task-input" placeholder="Add a new task...">
+    <button id="add-btn">Add</button>
+  </div>
+
+  <div class="add-task" id="add-recurring-task" style="display: none;">
+    <input type="text" id="recurring-task-input" placeholder="Add a new daily routine...">
+    <button id="add-recurring-btn">Add</button>
+  </div>
+
+  <div class="tab-content active" id="regular-tasks">
+    <div class="task-list" id="task-list">
+      <!-- Regular tasks will be added here dynamically -->
+    </div>
+  </div>
+
+  <div class="tab-content" id="recurring-tasks">
+    <div class="task-list" id="recurring-task-list">
+      <!-- Recurring tasks will be added here dynamically -->
+    </div>
+  </div>
+
+  <!-- Settings Panel -->
+  <div class="settings-panel" id="settings-panel">
+    <div class="settings-header">
+      <h2>Settings</h2>
+      <button class="close-settings" id="close-settings">×</button>
+    </div>
+    
+    <div class="settings-content">
+      <div class="setting-section">
+        <div class="setting-section-title">General</div>
+        <div class="setting-item">
+          <label>
+            <input type="checkbox" id="start-with-windows"> Start with Windows
+          </label>
+        </div>
+        
+        <div class="setting-item">
+          <label for="notification-time">Notify before deadline (minutes)</label>
+          <input type="number" id="notification-time" min="1" max="60">
+        </div>
+        
+        <div class="setting-item">
+          <label class="toggle-label">
+            <span class="toggle-text">Dark Mode</span>
+            <span class="toggle-switch">
+              <input type="checkbox" id="dark-mode">
+              <span class="toggle-slider"></span>
+            </span>
+          </label>
+        </div>
+      </div>
+      
+      <div class="setting-section">
+        <div class="setting-section-title">Bubble Customization</div>
+        <div class="setting-item">
+          <label for="bubble-size">Bubble Size: <span id="bubble-size-value">40</span>px</label>
+          <input type="range" id="bubble-size" class="bubble-size-slider" min="30" max="60" value="40">
+        </div>
+        
+        <div class="setting-item">
+          <label>Bubble Color</label>
+          <div class="color-scheme-options">
+            <div class="color-option pink selected" data-scheme="pink"></div>
+            <div class="color-option blue" data-scheme="blue"></div>
+            <div class="color-option green" data-scheme="green"></div>
+            <div class="color-option purple" data-scheme="purple"></div>
+            <div class="color-option orange" data-scheme="orange"></div>
+            <div class="color-option custom" data-scheme="solid" title="Custom Color">+</div>
+          </div>
+          <div class="color-picker-container" id="color-picker-container">
+            <input type="color" id="custom-color" class="color-picker" value="#ff61d2">
+          </div>
+        </div>
+        
+        <!-- Add Apply Changes button for immediate bubble updates -->
+        <button class="apply-bubble-changes" id="apply-bubble-btn">Apply Bubble Changes</button>
+      </div>
+    </div>
+    
+    <div class="settings-footer">
+      <button class="save-settings" id="save-settings">Save All Settings</button>
+    </div>
+  </div>
+  
+  <div class="overlay" id="overlay"></div>
+  
+  <div class="notification-banner" id="notification">Task saved!</div>
+  
+  <button class="refresh-button" id="refresh-button" title="Refresh app">🔄</button>
+  
+  <script>
+    try {
+      const { ipcRenderer } = require('electron');
+      
+      // Global variables - declare all variables only once
+      let tasks = [];
+      let recurringTasks = [];
+      let renderErrorCount = 0; // Ensure renderErrorCount is initialized early
+      const MAX_RENDER_ERRORS = 3;
+      let activeTab = 'regular';
+      
+      // DOM Elements
+      const taskList = document.getElementById('task-list');
+      const recurringTaskList = document.getElementById('recurring-task-list');
+      const refreshButton = document.getElementById('refresh-button');
+      const taskInput = document.getElementById('task-input');
+      const addBtn = document.getElementById('add-btn');
+      const tabButtons = document.querySelectorAll('.tab-btn');
+      const tabContents = document.querySelectorAll('.tab-content');
+      const regularTasksTab = document.getElementById('regular-tasks');
+      const recurringTasksTab = document.getElementById('recurring-tasks');
+      const addTaskSection = document.querySelector('.add-task');
+      const addRecurringTaskSection = document.getElementById('add-recurring-task');
+      const settingsBtn = document.getElementById('settings-btn');
+      const settingsPanel = document.getElementById('settings-panel');
+      const closeSettings = document.getElementById('close-settings');
+      const overlay = document.getElementById('overlay');
+      const notification = document.getElementById('notification');
+      const startWithWindows = document.getElementById('start-with-windows');
+      const notificationTime = document.getElementById('notification-time');
+      const saveSettings = document.getElementById('save-settings');
+      const recurringTaskInput = document.getElementById('recurring-task-input');
+      const addRecurringBtn = document.getElementById('add-recurring-btn');
+      
+      // Helper functions for renderTasks
+      function formatDate(dateString) {
+        try {
+          const date = new Date(dateString);
+          if (isNaN(date.getTime())) {
+            return "Invalid date";
+          }
+          
+          const now = new Date();
+          const today = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+          const tomorrow = new Date(today);
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          
+          const taskDate = new Date(date.getFullYear(), date.getMonth(), date.getDate());
+          
+          let dateText = '';
+          if (taskDate.getTime() === today.getTime()) {
+            dateText = 'Today';
+          } else if (taskDate.getTime() === tomorrow.getTime()) {
+            dateText = 'Tomorrow';
+          } else {
+            const options = { month: 'short', day: 'numeric' };
+            if (taskDate.getFullYear() !== today.getFullYear()) {
+              options.year = 'numeric';
+            }
+            dateText = date.toLocaleDateString(undefined, options);
+          }
+          
+          // Add time if available
+          if (date.getHours() !== 0 || date.getMinutes() !== 0) {
+            const timeOptions = { hour: '2-digit', minute: '2-digit' };
+            dateText += ' at ' + date.toLocaleTimeString(undefined, timeOptions);
+          }
+          
+          return dateText;
+        } catch (error) {
+          console.error('Error formatting date:', error);
+          return "Date error";
+        }
+      }
+      
+      function isDateUrgent(dateString) {
+        try {
+          const date = new Date(dateString);
+          if (isNaN(date.getTime())) {
+            return false;
+          }
+          
+          const now = new Date();
+          
+          // Get settings for notification time (in minutes)
+          const settings = ipcRenderer.sendSync('get-settings') || {};
+          const notifyBeforeMinutes = settings.notificationTime || 60; // Default 1 hour
+          
+          // Check if due date is within the notification window
+          const timeDiff = date.getTime() - now.getTime();
+          const minutesDiff = Math.floor(timeDiff / (1000 * 60));
+          
+          return minutesDiff <= notifyBeforeMinutes && minutesDiff > 0;
+        } catch (error) {
+          console.error('Error checking date urgency:', error);
+          return false;
+        }
+      }
+      
+      // Render tasks function - adding before it's called in loadTasks
+      function renderTasks() {
+        try {
+          if (!taskList) {
+            console.error("Task list element not found");
+            showNotification("Error: Could not render tasks");
+            return;
+          }
+          
+          taskList.innerHTML = '';
+          
+          if (tasks.length === 0) {
+            taskList.innerHTML = '<div class="empty-state">No tasks yet. Add one above!</div>';
+            return;
+          }
+          
+          // Sort tasks: incomplete first, then by priority and date
+          const sortedTasks = [...tasks].sort((a, b) => {
+            // First sort by completion status
+            if (a.completed !== b.completed) {
+              return a.completed ? 1 : -1;
+            }
+            
+            // Then sort by priority if both have same completion status
+            const priorityOrder = { high: 0, medium: 1, low: 2 };
+            const aPriority = priorityOrder[a.priority] || 999;
+            const bPriority = priorityOrder[b.priority] || 999;
+            
+            if (aPriority !== bPriority) {
+              return aPriority - bPriority;
+            }
+            
+            // Finally sort by date if both have same priority
+            const aDate = a.dueDate ? new Date(a.dueDate) : new Date(9999, 11, 31);
+            const bDate = b.dueDate ? new Date(b.dueDate) : new Date(9999, 11, 31);
+            return aDate - bDate;
+          });
+          
+          sortedTasks.forEach(task => {
+            const taskItem = document.createElement('div');
+            taskItem.className = `task-item ${task.completed ? 'completed' : ''}`;
+            
+            if (task.priority) {
+              taskItem.style.borderLeftColor = task.priority === 'high' ? '#ff6b6b' : 
+                                               task.priority === 'medium' ? '#f9b93f' : '#64c9b0';
+            }
+            
+            // Create task HTML structure
+            taskItem.innerHTML = `
+              <div class="task-header">
+                <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''}>
+                <div class="task-title">${task.title}</div>
+                <button class="task-delete">×</button>
+              </div>
+              <div class="task-details">
+                ${task.dueDate ? `
+                  <div class="date-time ${isDateUrgent(task.dueDate) && !task.completed ? 'urgent' : ''}">
+                    <i class="date-icon">📅</i>
+                    ${formatDate(task.dueDate)}
+                    <span class="task-edit-button" title="Edit date & priority">✏️</span>
+                  </div>
+                ` : ''}
+                ${task.priority ? `
+                  <div class="priority priority-${task.priority}">
+                    ${task.priority.charAt(0).toUpperCase() + task.priority.slice(1)}
+                  </div>
+                ` : ''}
+                <span class="task-toggle-notes" title="Add/edit notes">📝 Notes</span>
+                ${task.notes ? '<span class="note-indicator">📄</span>' : ''}
+                ${task.subtasks && task.subtasks.length > 0 ? 
+                  `<span class="subtasks-toggle">
+                    <i class="subtasks-icon">📋</i>
+                    Subtasks
+                    <span class="subtask-counter">${task.subtasks.filter(s => s.completed).length}/${task.subtasks.length}</span>
+                  </span>` : 
+                  '<span class="subtasks-toggle">+ Add subtasks</span>'
+                }
+              </div>
+              <div class="task-notes" style="display: none;">
+                <div class="task-notes-content">${task.notes || ''}</div>
+                <textarea class="task-notes-edit" style="display: none;">${task.notes || ''}</textarea>
+                <div class="task-notes-actions">
+                  <button class="task-notes-button edit-notes">Edit</button>
+                  <button class="task-notes-button save-notes" style="display: none;">Save</button>
+                  <button class="task-notes-button cancel-notes" style="display: none;">Cancel</button>
+                </div>
+              </div>
+              <div class="date-picker" style="display: none;">
+                <input type="datetime-local" class="date-input">
+                <div class="priority-selector">
+                  <select class="priority-input">
+                    <option value="low" ${task.priority === 'low' ? 'selected' : ''}>Low Priority</option>
+                    <option value="medium" ${task.priority === 'medium' ? 'selected' : ''}>Medium Priority</option>
+                    <option value="high" ${task.priority === 'high' ? 'selected' : ''}>High Priority</option>
+                  </select>
+                </div>
+                <div class="date-picker-actions">
+                  <button class="date-picker-button cancel-date">Cancel</button>
+                  <button class="date-picker-button save-date">Save</button>
+                </div>
+              </div>
+              <div class="subtasks" style="display: none;">
+                ${task.subtasks ? task.subtasks.map(subtask => `
+                  <div class="subtask-item ${subtask.completed ? 'subtask-completed' : ''}">
+                    <input type="checkbox" class="subtask-checkbox" ${subtask.completed ? 'checked' : ''}>
+                    <div class="subtask-title">${subtask.title}</div>
+                    <button class="subtask-delete">×</button>
+                  </div>
+                `).join('') : ''}
+                <div class="add-subtask">
+                  <input type="text" placeholder="Add a subtask...">
+                  <button>Add</button>
+                </div>
+              </div>
+            `;
+            
+            taskList.appendChild(taskItem);
+            
+            // Initialize task event listeners
+            initTaskEvents(taskItem, task.id);
+          });
+          
+          // Reset error counter on successful render
+          renderErrorCount = 0;
+        } catch (error) {
+          console.error('Error rendering tasks:', error);
+          renderErrorCount++;
+          if (renderErrorCount >= MAX_RENDER_ERRORS) {
+            showRefreshButton();
+          }
+        }
+      }
+      
+      // Render recurring tasks function - adding before it's called in loadTasks
+      function renderRecurringTasks() {
+        try {
+          if (!recurringTaskList) {
+            console.error("Recurring task list element not found");
+            showNotification("Error: Could not render recurring tasks");
+            return;
+          }
+          
+          recurringTaskList.innerHTML = '';
+          
+          if (recurringTasks.length === 0) {
+            recurringTaskList.innerHTML = '<div class="empty-state">No daily routines yet. Add one above!</div>';
+            return;
+          }
+          
+          // Sort recurring tasks: incomplete first
+          const sortedTasks = [...recurringTasks].sort((a, b) => {
+            return a.completed ? 1 : -1;
+          });
+          
+          sortedTasks.forEach(task => {
+            const taskItem = document.createElement('div');
+            taskItem.className = `task-item recurring ${task.completed ? 'completed' : ''}`;
+            
+            // Create recurring task HTML structure
+            taskItem.innerHTML = `
+              <div class="task-header">
+                <input type="checkbox" class="task-checkbox" ${task.completed ? 'checked' : ''}>
+                <div class="task-title">${task.title}</div>
+                <button class="task-delete">×</button>
+              </div>
+              <div class="task-details">
+                <div class="task-recurring-label">
+                  <i class="recurring-icon">🔄</i> Daily
+                </div>
+                <span class="task-toggle-notes" title="Add/edit notes">📝 Notes</span>
+                ${task.notes ? '<span class="note-indicator">📄</span>' : ''}
+              </div>
+              <div class="task-notes" style="display: none;">
+                <div class="task-notes-content">${task.notes || ''}</div>
+                <textarea class="task-notes-edit" style="display: none;">${task.notes || ''}</textarea>
+                <div class="task-notes-actions">
+                  <button class="task-notes-button edit-notes">Edit</button>
+                  <button class="task-notes-button save-notes" style="display: none;">Save</button>
+                  <button class="task-notes-button cancel-notes" style="display: none;">Cancel</button>
+                </div>
+              </div>
+            `;
+            
+            recurringTaskList.appendChild(taskItem);
+            
+            // Initialize recurring task event listeners
+            initRecurringTaskEvents(taskItem, task.id);
+          });
+          
+          // Reset error counter on successful render
+          renderErrorCount = 0;
+        } catch (error) {
+          console.error('Error rendering recurring tasks:', error);
+          renderErrorCount++;
+          if (renderErrorCount >= MAX_RENDER_ERRORS) {
+            showRefreshButton();
+          }
+        }
+      }
+      
+      // Function to initialize task event listeners
+      function initTaskEvents(taskItem, taskId) {
+        const checkbox = taskItem.querySelector('.task-checkbox');
+        const deleteBtn = taskItem.querySelector('.task-delete');
+        const taskTitle = taskItem.querySelector('.task-title');
+        const editDateBtn = taskItem.querySelector('.task-edit-button');
+        const datePicker = taskItem.querySelector('.date-picker');
+        const dateInput = taskItem.querySelector('.date-input');
+        const priorityInput = taskItem.querySelector('.priority-input');
+        const saveDateBtn = taskItem.querySelector('.save-date');
+        const cancelDateBtn = taskItem.querySelector('.cancel-date');
+        const toggleNotes = taskItem.querySelector('.task-toggle-notes');
+        const notesSection = taskItem.querySelector('.task-notes');
+        const notesContent = taskItem.querySelector('.task-notes-content');
+        const notesEdit = taskItem.querySelector('.task-notes-edit');
+        const editNotesBtn = taskItem.querySelector('.edit-notes');
+        const saveNotesBtn = taskItem.querySelector('.save-notes');
+        const cancelNotesBtn = taskItem.querySelector('.cancel-notes');
+        const subtasksToggle = taskItem.querySelector('.subtasks-toggle');
+        const subtasksSection = taskItem.querySelector('.subtasks');
+        const addSubtaskInput = taskItem.querySelector('.add-subtask input');
+        const addSubtaskBtn = taskItem.querySelector('.add-subtask button');
+        
+        // Toggle task completion
+        if (checkbox) {
+          checkbox.addEventListener('change', () => {
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+              task.completed = checkbox.checked;
+              taskItem.classList.toggle('completed', checkbox.checked);
+              ipcRenderer.send('update-task', task);
+              showNotification(`Task ${checkbox.checked ? 'completed' : 'uncompleted'}!`);
+            }
+          });
+        }
+        
+        // Delete task
+        if (deleteBtn) {
+          deleteBtn.addEventListener('click', () => {
+            tasks = tasks.filter(t => t.id !== taskId);
+            ipcRenderer.send('delete-task', taskId);
+            renderTasks();
+            showNotification('Task deleted');
+          });
+        }
+        
+        // Toggle date picker
+        if (editDateBtn && datePicker) {
+          editDateBtn.addEventListener('click', () => {
+            toggleDatePicker(datePicker, dateInput, tasks.find(t => t.id === taskId)?.dueDate);
+          });
+        }
+        
+        // Save date and priority
+        if (saveDateBtn && dateInput && priorityInput) {
+          saveDateBtn.addEventListener('click', () => {
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+              task.dueDate = dateInput.value;
+              task.priority = priorityInput.value;
+              ipcRenderer.send('update-task', task);
+              renderTasks();
+              datePicker.style.display = 'none';
+              showNotification('Task updated');
+            }
+          });
+        }
+        
+        // Cancel date picker
+        if (cancelDateBtn && datePicker) {
+          cancelDateBtn.addEventListener('click', () => {
+            datePicker.style.display = 'none';
+          });
+        }
+        
+        // Toggle notes
+        if (toggleNotes && notesSection) {
+          toggleNotes.addEventListener('click', () => {
+            const isVisible = notesSection.style.display === 'block';
+            notesSection.style.display = isVisible ? 'none' : 'block';
+          });
+        }
+        
+        // Edit notes
+        if (editNotesBtn && notesContent && notesEdit) {
+          editNotesBtn.addEventListener('click', () => {
+            notesContent.style.display = 'none';
+            notesEdit.style.display = 'block';
+            saveNotesBtn.style.display = 'block';
+            cancelNotesBtn.style.display = 'block';
+            editNotesBtn.style.display = 'none';
+          });
+        }
+        
+        // Save notes
+        if (saveNotesBtn && notesEdit && notesContent) {
+          saveNotesBtn.addEventListener('click', () => {
+            const task = tasks.find(t => t.id === taskId);
+            if (task) {
+              task.notes = notesEdit.value;
+              ipcRenderer.send('update-task', task);
+              
+              notesContent.textContent = notesEdit.value;
+              notesContent.style.display = 'block';
+              notesEdit.style.display = 'none';
+              saveNotesBtn.style.display = 'none';
+              cancelNotesBtn.style.display = 'none';
+              editNotesBtn.style.display = 'block';
+              
+              renderTasks(); // Re-render to show note indicator if needed
+            }
+          });
+        }
+        
+        // Cancel notes editing
+        if (cancelNotesBtn && notesEdit && notesContent) {
+          cancelNotesBtn.addEventListener('click', () => {
+            notesContent.style.display = 'block';
+            notesEdit.style.display = 'none';
+            saveNotesBtn.style.display = 'none';
+            cancelNotesBtn.style.display = 'none';
+            editNotesBtn.style.display = 'block';
+          });
+        }
+        
+        // Toggle subtasks
+        if (subtasksToggle && subtasksSection) {
+          subtasksToggle.addEventListener('click', () => {
+            const isVisible = subtasksSection.style.display === 'block';
+            subtasksSection.style.display = isVisible ? 'none' : 'block';
+          });
+        }
+        
+        // Add subtask
+        if (addSubtaskBtn && addSubtaskInput) {
+          addSubtaskBtn.addEventListener('click', () => {
+            const subtaskTitle = addSubtaskInput.value.trim();
+            if (subtaskTitle) {
+              const task = tasks.find(t => t.id === taskId);
+              if (task) {
+                if (!task.subtasks) task.subtasks = [];
+                
+                task.subtasks.push({
+                  id: Date.now(),
+                  title: subtaskTitle,
+                  completed: false
+                });
+                
+                ipcRenderer.send('update-task', task);
+                addSubtaskInput.value = '';
+                renderTasks();
+                
+                // Ensure subtasks section is visible
+                subtasksSection.style.display = 'block';
+              }
+            }
+          });
+          
+          // Add on Enter key
+          addSubtaskInput.addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') {
+              addSubtaskBtn.click();
+            }
+          });
+        }
+        
+        // Subtask check and delete buttons
+        const subtaskCheckboxes = taskItem.querySelectorAll('.subtask-checkbox');
+        const subtaskDeleteBtns = taskItem.querySelectorAll('.subtask-delete');
+        
+        subtaskCheckboxes.forEach(checkbox => {
+          checkbox.addEventListener('change', () => {
+            const subtaskItem = checkbox.closest('.subtask-item');
+            const subtaskIndex = Array.from(subtaskItem.parentNode.children).indexOf(subtaskItem);
+            
+            const task = tasks.find(t => t.id === taskId);
+            if (task && task.subtasks && task.subtasks[subtaskIndex]) {
+              task.subtasks[subtaskIndex].completed = checkbox.checked;
+              subtaskItem.classList.toggle('subtask-completed', checkbox.checked);
+              ipcRenderer.send('update-task', task);
+              renderTasks();
+            }
+          });
+        });
+        
+        subtaskDeleteBtns.forEach(deleteBtn => {
+          deleteBtn.addEventListener('click', () => {
+            const subtaskItem = deleteBtn.closest('.subtask-item');
+            const subtaskIndex = Array.from(subtaskItem.parentNode.children).indexOf(subtaskItem);
+            
+            const task = tasks.find(t => t.id === taskId);
+            if (task && task.subtasks) {
+              task.subtasks.splice(subtaskIndex, 1);
+              ipcRenderer.send('update-task', task);
+              renderTasks();
+            }
+          });
+        });
+      }
+      
+      // Function to initialize recurring task event listeners
+      function initRecurringTaskEvents(taskItem, taskId) {
+        const checkbox = taskItem.querySelector('.task-checkbox');
+        const deleteBtn = taskItem.querySelector('.task-delete');
+        const toggleNotes = taskItem.querySelector('.task-toggle-notes');
+        const notesSection = taskItem.querySelector('.task-notes');
+        const notesContent = taskItem.querySelector('.task-notes-content');
+        const notesEdit = taskItem.querySelector('.task-notes-edit');
+        const editNotesBtn = taskItem.querySelector('.edit-notes');
+        const saveNotesBtn = taskItem.querySelector('.save-notes');
+        const cancelNotesBtn = taskItem.querySelector('.cancel-notes');
+        
+        // Toggle task completion
+        if (checkbox) {
+          checkbox.addEventListener('change', () => {
+            const task = recurringTasks.find(t => t.id === taskId);
+            if (task) {
+              task.completed = checkbox.checked;
+              taskItem.classList.toggle('completed', checkbox.checked);
+              ipcRenderer.send('update-recurring-task', task);
+              showNotification(`Routine ${checkbox.checked ? 'completed' : 'uncompleted'}!`);
+            }
+          });
+        }
+        
+        // Delete task
+        if (deleteBtn) {
+          deleteBtn.addEventListener('click', () => {
+            recurringTasks = recurringTasks.filter(t => t.id !== taskId);
+            ipcRenderer.send('delete-recurring-task', taskId);
+            renderRecurringTasks();
+            showNotification('Routine deleted');
+          });
+        }
+        
+        // Toggle notes
+        if (toggleNotes && notesSection) {
+          toggleNotes.addEventListener('click', () => {
+            const isVisible = notesSection.style.display === 'block';
+            notesSection.style.display = isVisible ? 'none' : 'block';
+          });
+        }
+        
+        // Edit notes
+        if (editNotesBtn && notesContent && notesEdit) {
+          editNotesBtn.addEventListener('click', () => {
+            notesContent.style.display = 'none';
+            notesEdit.style.display = 'block';
+            saveNotesBtn.style.display = 'block';
+            cancelNotesBtn.style.display = 'block';
+            editNotesBtn.style.display = 'none';
+          });
+        }
+        
+        // Save notes
+        if (saveNotesBtn && notesEdit && notesContent) {
+          saveNotesBtn.addEventListener('click', () => {
+            const task = recurringTasks.find(t => t.id === taskId);
+            if (task) {
+              task.notes = notesEdit.value;
+              ipcRenderer.send('update-recurring-task', task);
+              
+              notesContent.textContent = notesEdit.value;
+              notesContent.style.display = 'block';
+              notesEdit.style.display = 'none';
+              saveNotesBtn.style.display = 'none';
+              cancelNotesBtn.style.display = 'none';
+              editNotesBtn.style.display = 'block';
+              
+              renderRecurringTasks(); // Re-render to show note indicator if needed
+            }
+          });
+        }
+        
+        // Cancel notes editing
+        if (cancelNotesBtn && notesEdit && notesContent) {
+          cancelNotesBtn.addEventListener('click', () => {
+            notesContent.style.display = 'block';
+            notesEdit.style.display = 'none';
+            saveNotesBtn.style.display = 'none';
+            cancelNotesBtn.style.display = 'none';
+            editNotesBtn.style.display = 'block';
+          });
+        }
+      }
+      
+      // Function to toggle date picker
+      function toggleDatePicker(datePicker, dateInput, currentDate) {
+        // Defensive check for date picker element
+        if (!datePicker || !dateInput) {
+          console.warn('Could not find date picker or date input element');
+          showNotification('Could not open date picker');
+          return;
+        }
+        
+        if (datePicker.style.display === 'none' || datePicker.style.display === '') {
+          if (currentDate) {
+            dateInput.value = currentDate;
+          } else {
+            // Set default date to today
+            const now = new Date();
+            const year = now.getFullYear();
+            const month = String(now.getMonth() + 1).padStart(2, '0');
+            const day = String(now.getDate()).padStart(2, '0');
+            dateInput.value = `${year}-${month}-${day}T12:00`;
+          }
+          datePicker.style.display = 'flex';
+        } else {
+          datePicker.style.display = 'none';
+        }
+      }
+      
+      // Tab switching logic
+      tabButtons.forEach(button => {
+        button.addEventListener('click', () => {
+          // Deactivate all tabs
+          tabButtons.forEach(btn => btn.classList.remove('active'));
+          tabContents.forEach(content => content.classList.remove('active'));
+          
+          // Activate the clicked tab
+          const tabName = button.dataset.tab;
+          button.classList.add('active');
+          document.getElementById(`${tabName}-tasks`).classList.add('active');
+          activeTab = tabName;
+          
+          // Show the appropriate add task section
+          if (tabName === 'recurring') {
+            addTaskSection.style.display = 'none';
+            addRecurringTaskSection.style.display = 'flex';
+          } else {
+            addTaskSection.style.display = 'flex';
+            addRecurringTaskSection.style.display = 'none';
+          }
+        });
+      });
+      
+      // Add new regular task
+      addBtn.addEventListener('click', () => {
+        const taskTitle = taskInput.value.trim();
+        if (taskTitle) {
+          const newTask = {
+            id: Date.now(),
+            title: taskTitle,
+            completed: false,
+            createdAt: new Date().toISOString()
+          };
+          
+          tasks.push(newTask);
+          ipcRenderer.send('update-tasks', tasks);
+          taskInput.value = '';
+          renderTasks();
+          showNotification('Task added!');
+        }
+      });
+      
+      // Add new recurring task
+      addRecurringBtn.addEventListener('click', () => {
+        const taskTitle = recurringTaskInput.value.trim();
+        if (taskTitle) {
+          const newTask = {
+            id: Date.now(),
+            title: taskTitle,
+            completed: false,
+            createdAt: new Date().toISOString()
+          };
+          
+          recurringTasks.push(newTask);
+          ipcRenderer.send('update-recurring-tasks', recurringTasks);
+          recurringTaskInput.value = '';
+          renderRecurringTasks();
+          showNotification('Daily routine added!');
+        }
+      });
+      
+      // Add task on Enter key
+      taskInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          addBtn.click();
+        }
+      });
+      
+      // Add recurring task on Enter key
+      recurringTaskInput.addEventListener('keypress', (e) => {
+        if (e.key === 'Enter') {
+          addRecurringBtn.click();
+        }
+      });
+      
+      // Settings panel event listeners
+      settingsBtn.addEventListener('click', () => {
+        settingsPanel.classList.add('active');
+        overlay.classList.add('active');
+        
+        // Tell main process to ignore blur events while settings panel is open
+        ipcRenderer.send('ignore-blur');
+        
+        // Load current settings values
+        const settings = ipcRenderer.sendSync('get-settings') || {};
+        startWithWindows.checked = settings.startWithWindows;
+        notificationTime.value = settings.notificationTime || 30;
+        
+        // Set dark mode toggle state - ensure it matches current theme
+        const darkMode = document.getElementById('dark-mode');
+        if (darkMode) {
+          // Remove any existing listeners to prevent duplicates
+          darkMode.removeEventListener('change', darkModeChangeHandler);
+          
+          // Get current theme state
+          const currentThemeIsDark = document.documentElement.getAttribute('data-theme') === 'dark';
+          darkMode.checked = currentThemeIsDark;
+          
+          // Add direct toggle functionality for immediate visual feedback
+          darkMode.addEventListener('change', darkModeChangeHandler);
+        }
+        
+        // Set bubble customization values if they exist
+        const bubbleSize = document.getElementById('bubble-size');
+        const bubbleSizeValue = document.getElementById('bubble-size-value');
+        if (bubbleSize && bubbleSizeValue && settings.bubble) {
+          bubbleSize.value = settings.bubble.size || 40;
+          bubbleSizeValue.textContent = bubbleSize.value;
+          
+          // Update size value display when slider moves
+          bubbleSize.addEventListener('input', () => {
+            bubbleSizeValue.textContent = bubbleSize.value;
+          });
+        }
+        
+        // Set color scheme selection if exists
+        if (settings.bubble && settings.bubble.colorScheme) {
+          const colorOptions = document.querySelectorAll('.color-option');
+          colorOptions.forEach(option => {
+            option.classList.remove('selected');
+            if (option.dataset.scheme === settings.bubble.colorScheme) {
+              option.classList.add('selected');
+            }
+          });
+          
+          // Show color picker if custom color is selected
+          const colorPickerContainer = document.getElementById('color-picker-container');
+          const customColor = document.getElementById('custom-color');
+          if (settings.bubble.colorScheme === 'solid' && colorPickerContainer) {
+            colorPickerContainer.classList.add('visible');
+            if (customColor && settings.bubble.customColor) {
+              customColor.value = settings.bubble.customColor;
+            }
+          }
+        }
+      });
+      
+      // Separate function for dark mode toggle handler to avoid duplicates
+      function darkModeChangeHandler() {
+        applyTheme(this.checked);
+        
+        // Save the change immediately to persist it
+        const settings = ipcRenderer.sendSync('get-settings') || {};
+        settings.darkMode = this.checked;
+        ipcRenderer.send('update-settings', settings);
+      }
+      
+      // Close settings
+      closeSettings.addEventListener('click', () => {
+        settingsPanel.classList.remove('active');
+        overlay.classList.remove('active');
+        
+        // Tell main process to respect blur events again when settings panel is closed
+        ipcRenderer.send('respect-blur');
+      });
+      
+      // Overlay click to close settings
+      overlay.addEventListener('click', () => {
+        settingsPanel.classList.remove('active');
+        overlay.classList.remove('active');
+        
+        // Tell main process to respect blur events again when settings panel is closed
+        ipcRenderer.send('respect-blur');
+      });
+      
+      // Save settings button
+      saveSettings.addEventListener('click', () => {
+        const darkMode = document.getElementById('dark-mode');
+        const bubbleSize = document.getElementById('bubble-size');
+        const customColor = document.getElementById('custom-color');
+        
+        // Get selected color scheme
+        let colorScheme = 'pink'; // default
+        const selectedColor = document.querySelector('.color-option.selected');
+        if (selectedColor) {
+          colorScheme = selectedColor.dataset.scheme;
+        }
+        
+        const settings = {
+          startWithWindows: startWithWindows.checked,
+          notificationTime: parseInt(notificationTime.value) || 30,
+          darkMode: darkMode ? darkMode.checked : false,
+          bubble: {
+            size: parseInt(bubbleSize ? bubbleSize.value : 40),
+            colorScheme: colorScheme,
+            customColor: customColor ? customColor.value : '#ff61d2'
+          }
+        };
+        
+        // Save settings
+        ipcRenderer.send('update-settings', settings);
+        
+        // Force apply theme immediately 
+        if (darkMode) {
+          console.log('Applying theme from settings save:', darkMode.checked);
+          applyTheme(darkMode.checked);
+        }
+        
+        // Close panel
+        settingsPanel.classList.remove('active');
+        overlay.classList.remove('active');
+        
+        // Re-enable blur events after settings panel is closed
+        ipcRenderer.send('respect-blur');
+        
+        // Show notification with clearer message about bubble changes
+        showNotification('Settings saved! Bubble will update immediately.');
+      });
+      
+      // Color scheme selection
+      const colorOptions = document.querySelectorAll('.color-option');
+      const colorPickerContainer = document.getElementById('color-picker-container');
+      
+      colorOptions.forEach(option => {
+        option.addEventListener('click', () => {
+          // Remove selected class from all options
+          colorOptions.forEach(o => o.classList.remove('selected'));
+          
+          // Add selected class to clicked option
+          option.classList.add('selected');
+          
+          // Show/hide color picker for custom color
+          if (option.dataset.scheme === 'solid' && colorPickerContainer) {
+            colorPickerContainer.classList.add('visible');
+          } else if (colorPickerContainer) {
+            colorPickerContainer.classList.remove('visible');
+          }
+        });
+      });
+      
+      // Function to check and reset recurring tasks if day has changed
+      function checkAndResetRecurringTasks() {
+        try {
+          const lastResetTimestamp = ipcRenderer.sendSync('get-last-reset-timestamp') || 0;
+          const lastResetDate = new Date(lastResetTimestamp);
+          const now = new Date();
+          
+          // Check if the last reset was on a different day
+          if (lastResetDate.getDate() !== now.getDate() || 
+              lastResetDate.getMonth() !== now.getMonth() || 
+              lastResetDate.getFullYear() !== now.getFullYear()) {
+            
+            console.log('New day detected, resetting recurring tasks...');
+            
+            // Reset all recurring tasks to uncompleted
+            recurringTasks = recurringTasks.map(task => ({
+              ...task,
+              completed: false
+            }));
+            
+            // Save and update the UI
+            ipcRenderer.send('update-recurring-tasks', recurringTasks);
+            renderRecurringTasks();
+            
+            // Update the last reset timestamp
+            ipcRenderer.send('set-last-reset-timestamp', now.getTime());
+            
+            showNotification('Daily routines have been reset!');
+          }
+        } catch (error) {
+          console.error('Error checking/resetting recurring tasks:', error);
+          ipcRenderer.send('renderer-error', 'Error resetting recurring tasks: ' + error.message);
+        }
+      }
+      
+      // Function to schedule the next midnight reset
+      function scheduleNextMidnightReset() {
+        try {
+          const now = new Date();
+          const tomorrow = new Date(now);
+          tomorrow.setDate(tomorrow.getDate() + 1);
+          tomorrow.setHours(0, 0, 0, 0);
+          
+          const timeUntilMidnight = tomorrow.getTime() - now.getTime();
+          
+          // Clear any existing timers
+          if (window.midnightResetTimer) {
+            clearTimeout(window.midnightResetTimer);
+          }
+          
+          // Set timer for midnight
+          window.midnightResetTimer = setTimeout(() => {
+            checkAndResetRecurringTasks();
+            scheduleNextMidnightReset(); // Schedule the next one
+          }, timeUntilMidnight);
+          
+          console.log(`Midnight reset scheduled in ${Math.round(timeUntilMidnight / 1000 / 60)} minutes`);
+        } catch (error) {
+          console.error('Error scheduling midnight reset:', error);
+          ipcRenderer.send('renderer-error', 'Error scheduling midnight reset: ' + error.message);
+        }
+      }
+      
+      // Apply theme function - improved for reliability
+      function applyTheme(isDarkMode) {
+        try {
+          console.log('Applying theme, dark mode:', isDarkMode);
+          if (isDarkMode) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+          } else {
+            document.documentElement.removeAttribute('data-theme');
+          }
+        } catch (error) {
+          console.error('Error applying theme:', error);
+        }
+      }
+      
+      // Load tasks from storage
+      function loadTasks() {
+        try {
+          tasks = ipcRenderer.sendSync('get-tasks') || [];
+          recurringTasks = ipcRenderer.sendSync('get-recurring-tasks') || [];
+          
+          renderTasks();
+          renderRecurringTasks();
+          
+          // Reset error counter on successful load
+          renderErrorCount = 0;
+          hideRefreshButton();
+        } catch (error) {
+          console.error('Error loading tasks:', error);
+          showNotification('Error loading tasks');
+          ipcRenderer.send('renderer-error', 'Error loading tasks: ' + error.message);
+          
+          // Increment error counter and show refresh button if needed
+          renderErrorCount++;
+          if (renderErrorCount >= MAX_RENDER_ERRORS) {
+            showRefreshButton();
+          }
+          
+          renderTasks();
+          renderRecurringTasks();
+        }
+      }
+      
+      // Show notification banner - defined early for use by many functions
+      function showNotification(message) {
+        notification.textContent = message;
+        notification.classList.add('show');
+        
+        setTimeout(() => {
+          notification.classList.remove('show');
+        }, 2000);
+      }
+      
+      // Hide refresh button
+      function hideRefreshButton() {
+        if (refreshButton) {
+          refreshButton.classList.remove('show');
+        }
+      }
+
+      // Initialize App - MOVED TO END OF SCRIPT
+      // All function calls moved to the bottom after all function definitions
+      // Track intervals for proper cleanup
+      let taskResetInterval;
+      
+      document.addEventListener('DOMContentLoaded', function() {
+        // Apply theme first before anything else
+        const settings = ipcRenderer.sendSync('get-settings') || { darkMode: false };
+        console.log('Initial theme application, dark mode:', settings.darkMode);
+        applyTheme(settings.darkMode);
+        
+        // Initialize app only after all functions have been defined
+        loadTasks();
+        
+        // Check if we need to reset recurring tasks at app startup
+        checkAndResetRecurringTasks();
+        
+        // Set a timer to check for day change (only if not already set)
+        if (!taskResetInterval) {
+          // Increase to 30 minutes as day changes don't need frequent checks
+          taskResetInterval = setInterval(checkAndResetRecurringTasks, 1800000);
+        }
+        
+        // Start the midnight reset scheduling
+        scheduleNextMidnightReset();
+        
+        // Set up window control buttons
+        const minimizeBtn = document.getElementById('minimize-btn');
+        const closeBtn = document.getElementById('close-btn');
+        
+        if (minimizeBtn) {
+          minimizeBtn.addEventListener('click', () => {
+            console.log('Minimize button clicked');
+            ipcRenderer.send('minimize-window');
+          });
+        }
+        
+        if (closeBtn) {
+          closeBtn.addEventListener('click', () => {
+            console.log('Close button clicked');
+            ipcRenderer.send('hide-window');
+          });
+        }
+      });
+      
+      // If DOM is already loaded, initialize immediately
+      if (document.readyState === 'complete' || document.readyState === 'interactive') {
+        setTimeout(function() {
+          // Apply theme first before anything else
+          const settings = ipcRenderer.sendSync('get-settings') || { darkMode: false };
+          console.log('Secondary theme application, dark mode:', settings.darkMode);
+          applyTheme(settings.darkMode);
+          
+          loadTasks();
+          
+          // Check if we need to reset recurring tasks at app startup
+          checkAndResetRecurringTasks();
+          
+          // Set a timer to check for day change (only if not already set)
+          if (!taskResetInterval) {
+            // Increase to 30 minutes as day changes don't need frequent checks
+            taskResetInterval = setInterval(checkAndResetRecurringTasks, 1800000);
+          }
+          
+          // Start the midnight reset scheduling
+          scheduleNextMidnightReset();
+          
+          // Set up window control buttons
+          const minimizeBtn = document.getElementById('minimize-btn');
+          const closeBtn = document.getElementById('close-btn');
+          
+          if (minimizeBtn) {
+            minimizeBtn.addEventListener('click', () => {
+              console.log('Minimize button clicked');
+              ipcRenderer.send('minimize-window');
+            });
+          }
+          
+          if (closeBtn) {
+            closeBtn.addEventListener('click', () => {
+              console.log('Close button clicked');
+              ipcRenderer.send('hide-window');
+            });
+          }
+        }, 10);
+      }
+      
+      // Clean up intervals when the window is closed
+      window.addEventListener('beforeunload', () => {
+        if (taskResetInterval) {
+          clearInterval(taskResetInterval);
+        }
+        if (window.midnightResetTimer) {
+          clearTimeout(window.midnightResetTimer);
+        }
+      });
+
+      // Add event listener for the apply bubble changes button
+      const applyBubbleBtn = document.getElementById('apply-bubble-btn');
+      if (applyBubbleBtn) {
+        applyBubbleBtn.addEventListener('click', () => {
+          const bubbleSize = document.getElementById('bubble-size');
+          const customColor = document.getElementById('custom-color');
+          
+          // Get selected color scheme
+          let colorScheme = 'pink'; // default
+          const selectedColor = document.querySelector('.color-option.selected');
+          if (selectedColor) {
+            colorScheme = selectedColor.dataset.scheme;
+          }
+          
+          // Get current settings to update only the bubble portion
+          const currentSettings = ipcRenderer.sendSync('get-settings') || {};
+          
+          // Create updated settings with just the bubble changes
+          const updatedSettings = {
+            ...currentSettings,
+            bubble: {
+              size: parseInt(bubbleSize ? bubbleSize.value : 40),
+              colorScheme: colorScheme,
+              customColor: customColor ? customColor.value : '#ff61d2'
+            }
+          };
+          
+          // Save settings
+          ipcRenderer.send('update-settings', updatedSettings);
+          
+          // Show notification
+          showNotification('Bubble updated!');
+        });
+      }
+    } catch (error) {
+      // Global error handler
+      console.error('Fatal error in app:', error);
+      document.body.innerHTML = `
+        <div style="padding: 20px; text-align: center;">
+          <h2>An error occurred</h2>
+          <p>Sorry, an error occurred while loading the application.</p>
+          <p>Error details: ${error.message}</p>
+          <button onclick="window.location.reload()">Reload App</button>
+        </div>
+      `;
+    }
+  </script>
+</body>
+</html> 

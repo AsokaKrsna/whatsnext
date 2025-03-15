@@ -1,0 +1,61 @@
+{
+  "name": "whats-next",
+  "version": "2.0.1",
+  "description": "A always-on-top to-do list application with a bubble interface",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build": "electron-builder",
+    "build:win": "electron-builder --win --x64",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [
+    "todo",
+    "bubble",
+    "desktop",
+    "windows"
+  ],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "electron-store": "^10.0.1",
+    "moment": "^2.30.1",
+    "node-notifier": "^10.0.1",
+    "uuid": "^11.1.0"
+  },
+  "devDependencies": {
+    "electron": "^35.0.1",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.whatsnext.app",
+    "productName": "What's Next",
+    "win": {
+      "target": "nsis",
+      "icon": "assets/icon.ico",
+      "artifactName": "${productName}-Setup-${version}.${ext}"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true
+    },
+    "files": [
+      "**/*",
+      "!**/node_modules/*/{CHANGELOG.md,README.md,README,readme.md,readme}",
+      "!**/node_modules/*/{test,__tests__,tests,powered-test,example,examples}",
+      "!**/node_modules/*.d.ts",
+      "!**/node_modules/.bin",
+      "!**/*.{iml,o,hprof,orig,pyc,pyo,rbc,swp,csproj,sln,xproj}",
+      "!.editorconfig",
+      "!**/._*",
+      "!**/{.DS_Store,.git,.hg,.svn,CVS,RCS,SCCS,.gitignore,.gitattributes}",
+      "!**/{__pycache__,thumbs.db,.flowconfig,.idea,.vs,.nyc_output}",
+      "!**/{appveyor.yml,.travis.yml,circle.yml}",
+      "!**/{npm-debug.log,yarn.lock,.yarn-integrity,.yarn-metadata.json}"
+    ],
+    "asar": true,
+    "compression": "maximum"
+  }
+}
