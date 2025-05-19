@@ -30,6 +30,15 @@ What's Next is a sleek, always-on-top to-do list application for Windows. It fea
   - Minimizes to system tray
   - Low resource usage
 
+ ## How it looks! 
+![image](https://github.com/user-attachments/assets/975ec881-23c7-4053-afc6-93fafce321a6)
+![image](https://github.com/user-attachments/assets/d8b2e897-78ff-4d5b-99b5-628158ac23e8)
+![image](https://github.com/user-attachments/assets/e25a4526-2c6c-45b1-9b05-31ab838279dd)
+![image](https://github.com/user-attachments/assets/af26c957-5234-4b52-9344-abb29cb4a663)
+![image](https://github.com/user-attachments/assets/edbcee9e-c15d-4e22-b777-d68517d11eac)
+
+
+
 ## Getting Started
 
 ### Prerequisites
